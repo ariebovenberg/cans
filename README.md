@@ -1,31 +1,31 @@
 # 🥫 Canned
 
-(🚧 Work in progress 🚧)
+🚧 Work in progress 🚧
 
-Composable, functional containers like `Maybe`, `IO`, `Lazy`, `Result`.
+Composable, robust, functional containers like `Maybe`, `IO`, `Lazy`, `Result`.
 Focus on simplicity & predictability 🧩 over fancy ergonomics & magic 🪄.
-Supports `mypy`, and even pattern matching on Python 3.10+.
+Supports `mypy`, and pattern matching on Python 3.10+.
 
 ## Quickstart
 
 ```python
 >>> from canned.maybe import Just, Nothing
->>> m = Just("world")
->>> m.map(str.upper)
-Just("WORLD")
->>> m.unwrap()
-"WORLD"
+>>> greeting = Just("hello")
+>>> greeting.map(str.upper)
+Just("HELLO")
+
 >>> # python 3.10+ only
->>> match m:
+>>> match greeting:
 ...     case Just(n):
-...         print(f'Hello {n.title()}!')
+...         print(f'{greeting.title()} world!')
 ...     case Nothing():
-...         print('Nope.')
-Hello World!
+...         print('Hi world!')
+Hello world!
 ```
 
 Among the supported methods are `flatmap`, `filter`, `zip`, 
-as well as the relevant collection APIs.
+as well as the relevant 
+[collection APIs](https://docs.python.org/3/library/collections.abc.html).
 
 ## Todo
 
