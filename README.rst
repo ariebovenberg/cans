@@ -1,9 +1,22 @@
 🥫 Canned
 =========
 
-🚧 Work in progress 🚧
+.. image:: https://img.shields.io/pypi/v/canned.svg
+   :target: https://pypi.python.org/pypi/canned
 
-Composable, robust, functional containers like ``Maybe``, ``IO``, ``Lazy``, ``Result``.
+.. image:: https://img.shields.io/pypi/l/canned.svg
+   :target: https://pypi.python.org/pypi/canned
+
+.. image:: https://img.shields.io/pypi/pyversions/canned.svg
+   :target: https://pypi.python.org/pypi/canned
+
+.. image:: https://img.shields.io/readthedocs/canned.svg
+   :target: http://canned.readthedocs.io/
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
+
+Composable, robust, functional containers like ``Maybe``.
 Properly typed and supports pattern matching on Python 3.10+.
 
 Quickstart
@@ -15,13 +28,13 @@ Quickstart
    >>> greeting = Just("hello")
    >>> greeting.map(str.upper)
    Just("HELLO")
-
+   ...
    >>> # Python 3.10+ only
    >>> match greeting:
    ...     case Just(n):
-   ...         print(f'{greeting.title()} world!')
+   ...         print(f"{greeting.title()} world!")
    ...     case Nothing():
-   ...         print('Hi world!')
+   ...         print("Hi world!")
    Hello world!
 
 Among the supported methods are ``flatmap``, ``filter``, ``zip``,
@@ -32,4 +45,3 @@ Todo
 ----
 
 - Other containers
-- CI/CD
