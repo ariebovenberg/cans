@@ -1,4 +1,4 @@
-.PHONY: clean isort isort-check format format-check fix lint type-check pytest check test documentation
+.PHONY: clean isort isort-check format format-check fix lint type-check pytest check test documentation docs
 
 clean:
 	rm -rf .coverage .hypothesis .mypy_cache .pytest_cache .tox *.egg-info
@@ -31,3 +31,7 @@ pytest:
 	pytest --cov=canned
 
 test: check pytest
+
+docs:
+	@touch docs/api.rst
+	make -C docs/ html
