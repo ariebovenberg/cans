@@ -1,11 +1,14 @@
+import importlib
+import pickle
+import sys
 from dataclasses import is_dataclass
 from datetime import date, datetime, time
-from typing import Iterable, Union, Collection
+from typing import Collection, Iterable, Union
 
 import pytest
 
-from dango import maybe
-from dango.maybe import Just, Maybe, Nothing
+from canned import maybe
+from canned.maybe import Just, Maybe, Nothing
 
 
 def _inverse(n: int) -> Maybe[float]:
@@ -74,9 +77,8 @@ def test_unwrap_or():
     assert Just(0).unwrap_or(3) == 0
     Nothing().unwrap_or(9) == 9
 
-    # correct handling of types
-    k: Union[date, int] = Just(4).unwrap_or(date(2020, 1, 1))
-    assert k == 4
+    # check mypy type inference
+    _: Union[date, int] = Just(4).unwrap_or(date(2020, 1, 1))
 
 
 def test_expect():
@@ -106,6 +108,9 @@ def test_iter():
     assert list(Just(5)) == [5]
     assert list(Just(0)) == [0]
     assert list(Nothing()) == []
+    assert list(reversed(Just(5))) == [5]
+    assert list(reversed(Just(0))) == [0]
+    assert list(reversed(Nothing())) == []
 
 
 def test_flatmap():
@@ -134,6 +139,7 @@ def test_setdefault():
     assert Just(2).setdefault(9) == Just(2)
     assert Nothing().setdefault(3) == Just(3)
 
+    # check mypy type inference
     _: Maybe[Union[int, date]] = Just(2).setdefault(date(2020, 1, 1))
 
 
@@ -167,6 +173,7 @@ def test_and():
     assert Nothing() & Nothing() == Nothing()
     assert Nothing() & Just(8) == Nothing()
 
+    # check mypy type inference
     _: Maybe[Union[int, date]] = Just(2) & Just(date(2020, 1, 1))
 
 
@@ -180,3 +187,67 @@ def test_or():
     assert Just(5) | Nothing() == Just(5)
     assert Nothing() | Nothing() == Nothing()
     assert Nothing() | Just(4) == Just(4)
+
+
+def test_getitem():
+    assert Just(2)[0] == 2
+    with pytest.raises(IndexError):
+        assert Just(4)[1]
+    with pytest.raises(IndexError):
+        assert Nothing()[0]
+
+    with pytest.raises(IndexError):
+        assert Nothing()[4]
+
+    assert Just(2)[:4] == Just(2)
+    assert Just(4)[0:0] == Nothing()
+    assert Just(1)[4:] == Nothing()
+    assert Just(9)[4:9] == Nothing()
+    assert Just(8)[:9:4] == Just(8)
+    assert Just(7)[::3] == Just(7)
+    assert Just(6)[:] == Just(6)
+
+    assert Nothing()[:4] == Nothing()
+    assert Nothing()[0:0] == Nothing()
+    assert Nothing()[4:] == Nothing()
+    assert Nothing()[4:9] == Nothing()
+    assert Nothing()[:9:4] == Nothing()
+    assert Nothing()[::3] == Nothing()
+    assert Nothing()[:] == Nothing()
+
+    # check mypy type inferrence
+    _: Maybe[int] = Just(8)[:]
+    __: int = Just(8)[0]  # noqa
+
+
+def test_index():
+    assert Just(2).index(2) == 0
+    with pytest.raises(ValueError):
+        Just(4).index(9)
+
+    with pytest.raises(ValueError):
+        Nothing().index(9)
+
+
+def test_count():
+    assert Just(5).count(5) == 1
+    assert Just(5).count(3) == 0
+    assert Nothing().count(6) == 0
+
+
+def test_pickle():
+    assert pickle.loads(pickle.dumps(Just(2))) == Just(2)
+    assert pickle.loads(pickle.dumps(Nothing())) == Nothing()
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="requires Python >=3.10 "
+)
+def test_pattern_match():
+    # this roundabout way of running the test because pattern matching
+    # is invalid syntax in older python versions.
+    (
+        importlib.import_module(
+            "tests.py310_only"
+        ).test_maybe_pattern_match()  # type: ignore
+    )

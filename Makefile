@@ -28,6 +28,6 @@ type-check:
 check: lint isort-check format-check type-check
 
 pytest:
-	pytest --cov=dango
+	pytest --cov=canned
 
 test: check pytest

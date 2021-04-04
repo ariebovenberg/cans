@@ -4,5 +4,3 @@ try:
     __version__ = __import__("importlib.metadata").metadata.version(__name__)
 except ModuleNotFoundError:  # pragma: no cover
     __version__ = __import__("importlib_metadata").version(__name__)
-
-from .maybe import *
