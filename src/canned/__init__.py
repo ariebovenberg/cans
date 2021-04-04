@@ -56,6 +56,7 @@ class Maybe(Generic[T_co], Sequence[T_co]):
     ...         print('Nothing here...')
     "Hello there"
     """
+
     __slots__ = ()
 
     def __init__(self) -> None:
@@ -379,6 +380,7 @@ class Just(Maybe[T_co]):
     8
 
     """
+
     __slots__ = "_value"
 
     _value: T_co
@@ -480,6 +482,7 @@ class Nothing(Maybe[T_co]):
     "nope"
 
     """
+
     __slots__ = ()
 
     def unwrap(self) -> T_co:

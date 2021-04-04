@@ -29,72 +29,72 @@ release = metadata["Version"]
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.viewcode',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.viewcode",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'emacs'
+pygments_style = "emacs"
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_material'
+html_theme = "sphinx_material"
 
 # html_static_path = ['_static']
-highlight_language = 'python3'
+highlight_language = "python3"
 
 # Material theme options (see theme.conf for more information)
 html_theme_options = {
-
-    'nav_title': 'Canned',
-
+    "nav_title": "Canned",
     # Set the color and the accent color
-    'color_primary': 'red',
-    'color_accent': 'light-red',
-
+    "color_primary": "red",
+    "color_accent": "light-red",
     # Set the repo location to get a badge with stats
-    'repo_url': 'https://github.com/ariebovenberg/canned/',
-    'repo_name': 'Canned',
-
+    "repo_url": "https://github.com/ariebovenberg/canned/",
+    "repo_name": "Canned",
     # Visible levels of the global TOC; -1 means unlimited
-    'globaltoc_depth': 3,
+    "globaltoc_depth": 3,
     # If False, expand all TOC entries
-    'globaltoc_collapse': False,
+    "globaltoc_collapse": False,
     # If True, show hidden TOC entries
-    'globaltoc_includehidden': False,
+    "globaltoc_includehidden": False,
 }
 
 
 html_sidebars = {
-    "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
+    "**": [
+        "logo-text.html",
+        "globaltoc.html",
+        "localtoc.html",
+        "searchbox.html",
+    ]
 }
-
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'snug': ('https://snug.readthedocs.org/en/latest/', None),
+    "python": ("https://docs.python.org/3", None),
+    "snug": ("https://snug.readthedocs.org/en/latest/", None),
 }
