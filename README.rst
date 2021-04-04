@@ -1,19 +1,19 @@
 🥫 Canned
 =========
 
-.. image:: https://img.shields.io/pypi/v/canned.svg
+.. image:: https://img.shields.io/pypi/v/canned.svg?style=flat-square
    :target: https://pypi.python.org/pypi/canned
 
-.. image:: https://img.shields.io/pypi/l/canned.svg
+.. image:: https://img.shields.io/pypi/l/canned.svg?style=flat-square
    :target: https://pypi.python.org/pypi/canned
 
-.. image:: https://img.shields.io/pypi/pyversions/canned.svg
+.. image:: https://img.shields.io/pypi/pyversions/canned.svg?style=flat-square
    :target: https://pypi.python.org/pypi/canned
 
-.. image:: https://img.shields.io/readthedocs/canned.svg
+.. image:: https://img.shields.io/readthedocs/canned.svg?style=flat-square
    :target: http://canned.readthedocs.io/
 
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square
    :target: https://github.com/psf/black
 
 Composable, robust, functional containers like ``Maybe``.
