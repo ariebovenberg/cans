@@ -7,8 +7,7 @@ from typing import Collection, Iterable, Union
 
 import pytest
 
-from canned import maybe
-from canned.maybe import Just, Maybe, Nothing
+from canned import Just, Maybe, Nothing, flatten
 
 
 def _inverse(n: int) -> Maybe[float]:
@@ -28,11 +27,11 @@ def _midnight(d: date) -> datetime:
 
 def test_class_structure():
     with pytest.raises(TypeError, match="instantiate"):
-        maybe.Maybe()
-    assert isinstance(Just(5), maybe.Maybe)
-    assert isinstance(maybe.Nothing(), maybe.Maybe)
-    assert issubclass(maybe.Maybe, Iterable)
-    assert issubclass(maybe.Maybe, Collection)
+        Maybe()
+    assert isinstance(Just(5), Maybe)
+    assert isinstance(Nothing(), Maybe)
+    assert issubclass(Maybe, Iterable)
+    assert issubclass(Maybe, Collection)
 
 
 def test_just_basics():
@@ -45,23 +44,18 @@ def test_just_basics():
 
 
 def test_nothing_basics():
-    assert is_dataclass(maybe.Nothing())
-    assert maybe.Nothing() == maybe.Nothing()
-    assert hash(maybe.Nothing()) == hash(maybe.Nothing())
-    assert maybe.Nothing().is_nothing()
-    assert not maybe.Nothing().is_just()
+    assert is_dataclass(Nothing())
+    assert Nothing() == Nothing()
+    assert hash(Nothing()) == hash(Nothing())
+    assert Nothing().is_nothing()
+    assert not Nothing().is_just()
     assert repr(Nothing()) == "Nothing()"
 
 
-def test_of():
-    assert maybe.of(5) == Just(5)
-    assert maybe.of(None) == Just(None)
-
-
 def test_from_optional():
-    assert maybe.from_optional(5) == Just(5)
-    assert maybe.from_optional(0) == Just(0)
-    assert maybe.from_optional(None) == maybe.Nothing()
+    assert Maybe.from_optional(5) == Just(5)
+    assert Maybe.from_optional(0) == Just(0)
+    assert Maybe.from_optional(None) == Nothing()
 
 
 def test_unwrap():
@@ -69,7 +63,7 @@ def test_unwrap():
     assert Just(0).unwrap() == 0
 
     with pytest.raises(TypeError, match="empty"):
-        maybe.Nothing().unwrap()
+        Nothing().unwrap()
 
 
 def test_unwrap_or():
@@ -86,22 +80,22 @@ def test_expect():
     assert Just(0).expect("help!") == 0
 
     with pytest.raises(AssertionError, match="foo"):
-        maybe.Nothing().expect("foo")
+        Nothing().expect("foo")
 
 
 def test_map():
     assert Just(3).map(_incr) == Just(4)
     assert Just(0).map(_incr) == Just(1)
-    assert maybe.Nothing().map(_incr) == maybe.Nothing()
+    assert Nothing().map(_incr) == Nothing()
 
     # contra- and co-variance
-    _: Maybe[date] = maybe.of(datetime(2020, 1, 1, 1, 2)).map(_midnight)
+    _: Maybe[date] = Just(datetime(2020, 1, 1, 1, 2)).map(_midnight)
 
 
 def test_flatten():
-    assert maybe.flatten(Just(Just(5))) == Just(5)
-    assert maybe.flatten(Just(Nothing())) == Nothing()
-    assert maybe.flatten(Nothing()) == Nothing()
+    assert flatten(Just(Just(5))) == Just(5)
+    assert flatten(Just(Nothing())) == Nothing()
+    assert flatten(Nothing()) == Nothing()
 
 
 def test_iter():

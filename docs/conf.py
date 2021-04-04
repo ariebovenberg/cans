@@ -53,52 +53,44 @@ master_doc = 'index'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'emacs'
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_material'
 
 # html_static_path = ['_static']
 highlight_language = 'python3'
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
+# Material theme options (see theme.conf for more information)
 html_theme_options = {
-    'logo_text_align': 'center',
-    "description": metadata['Description'],
-    'description_font_style': 'italic',
-    "github_user": 'ariebovenberg',
-    "github_repo": 'canned',
-    "github_banner": True,
-    'codecov_button': True,
-    "github_type": 'star',
-    'fixed_sidebar': True,
-    'code_font_size': '0.8em',
-    'travis_button': True,
-    'extra_nav_links': OrderedDict([
-        ('canned @ PyPI', 'http://pypi.python.org/pypi/canned'),
-        ('canned @ GitHub', 'http://github.com/ariebovenberg/canned'),
-        ('Issue Tracker', 'http://github.com/ariebovenberg/canned/issues'),
-    ]),
 
-    'note_bg': '#D5E8ED',
-    'note_border': '#D5E8ED',
-    'seealso_bg': '#D5E8ED',
-    'seealso_border': '#D5E8ED',
-    'warn_bg': '#EDC7BE',
-    'warn_border': '#EDC7BE',
-    'pre_bg': '#f5eeed',
+    'nav_title': 'Canned',
+
+    # Set the color and the accent color
+    'color_primary': 'red',
+    'color_accent': 'light-red',
+
+    # Set the repo location to get a badge with stats
+    'repo_url': 'https://github.com/ariebovenberg/canned/',
+    'repo_name': 'Canned',
+
+    # Visible levels of the global TOC; -1 means unlimited
+    'globaltoc_depth': 3,
+    # If False, expand all TOC entries
+    'globaltoc_collapse': False,
+    # If True, show hidden TOC entries
+    'globaltoc_includehidden': False,
 }
+
 
 html_sidebars = {
-    '**': ['about.html', 'navigation.html', 'searchbox.html']
+    "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
 }
+
 
 
 # Example configuration for intersphinx: refer to the Python standard library.

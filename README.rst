@@ -4,19 +4,19 @@
 🚧 Work in progress 🚧
 
 Composable, robust, functional containers like ``Maybe``, ``IO``, ``Lazy``, ``Result``.
-Supports ``mypy``, and pattern matching on Python 3.10+.
+Properly typed and supports pattern matching on Python 3.10+.
 
 Quickstart
 ----------
 
 .. code-block:: python3
 
-   >>> from canned.maybe import Just, Nothing
+   >>> from canned import Just, Nothing
    >>> greeting = Just("hello")
    >>> greeting.map(str.upper)
    Just("HELLO")
 
-   >>> # python 3.10+ only
+   >>> # Python 3.10+ only
    >>> match greeting:
    ...     case Just(n):
    ...         print(f'{greeting.title()} world!')
@@ -31,6 +31,5 @@ as well as the relevant
 Todo
 ----
 
-- Docs
 - Other containers
 - CI/CD
