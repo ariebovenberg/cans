@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.1.1 (2021-04-05)
+------------------
+
+- Fix bug where docs dependencies were included in base release.
+
 0.1.0 (2021-04-05)
 ------------------
 

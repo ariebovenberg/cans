@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cans"
-version = "0.1.0"
+version = "0.1.1"
 description = "Robust, composable, functional containers"
 authors = ["Arie Bovenberg <a.c.bovenberg@gmail.com>"]
 license = "MIT"
@@ -14,8 +14,6 @@ repository = "https://github.com/ariebovenberg/cans"
 [tool.poetry.dependencies]
 python = "^3.7"
 importlib-metadata = {version = "^1.0", python = "<3.8"}
-sphinx = { version = "^3.5.3", optional = true }
-sphinx-material = {version = "^0.0.32", optional = true }
 typing-extensions = "^3.7.4"
 
 [tool.poetry.dev-dependencies]
@@ -25,9 +23,6 @@ mypy = "^0.812"
 pytest = "^6.2.1"
 tox = "^3.20.1"
 black = "^20.8b1"
-
-[tool.poetry.extras]
-docs = ["sphinx"]
 
 [tool.black]
 line-length = 79
