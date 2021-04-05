@@ -24,10 +24,14 @@ Quickstart
 
 .. code-block:: python3
 
-   >>> from cans import Just, Nothing
-   >>> greeting = Just("hello")
-   >>> greeting.map(str.upper)
-   Just("HELLO")
+   >>> from cans import Just, Nothing, Maybe
+   >>> greeting: Maybe[str] = Just("Hello")
+   ...
+   >>> def first(m: list[str]) -> Maybe[str]:
+   ...     return Just(m[0]) if m else Nothing()
+   ...
+   >>> first(["howdy", "hi", "hello"]).map(str.title).unwrap()
+   "Howdy"
    ...
    >>> # Python 3.10+ only
    >>> match greeting:
