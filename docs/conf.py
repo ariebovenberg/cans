@@ -56,7 +56,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 pygments_style = "emacs"
 
 autodoc_type_aliases = {"Maybe": "cans.Maybe"}
-autodoc_member_order = 'bysource'
+autodoc_member_order = "bysource"
 
 
 # -- Options for HTML output ----------------------------------------------

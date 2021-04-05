@@ -46,7 +46,7 @@ def flatten(m: Maybe[Maybe[T_co]]) -> Maybe[T_co]:
 
 
 def maybe_from_optional(_v: Optional[T_co]) -> Maybe[T_co]:
-    """Create a maybe container from the given value, which may be `None`.
+    """Create a maybe container from the given value, which may be ``None``.
     In that case, it'll be an empty Maybe.
 
     Example

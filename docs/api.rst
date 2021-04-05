@@ -11,7 +11,7 @@ Maybe
 .. autoclass:: cans.Nothing
 
 .. automodule:: cans
-   :members: MaybeMixin
+   :members: MaybeMixin, maybe_from_optional, flatten
    :special-members:
    :show-inheritance:
    :exclude-members: __namedtuple_cls__, __hash__, __weakref__, __getnewargs__,
