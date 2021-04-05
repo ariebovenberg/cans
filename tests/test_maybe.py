@@ -7,7 +7,7 @@ from typing import Collection, Iterable, Union
 
 import pytest
 
-from cans import Just, Maybe, Nothing, flatten
+from cans import Just, Maybe, Nothing, flatten, maybe_from_optional
 
 
 def _inverse(n: int) -> Maybe[float]:
@@ -27,11 +27,27 @@ def _midnight(d: date) -> datetime:
 
 def test_class_structure():
     with pytest.raises(TypeError, match="instantiate"):
-        Maybe()
-    assert isinstance(Just(5), Maybe)
-    assert isinstance(Nothing(), Maybe)
-    assert issubclass(Maybe, Iterable)
-    assert issubclass(Maybe, Collection)
+        Maybe()  # type: ignore
+
+    # check mypy typing
+    x: Maybe = Just(5)
+    y: Maybe[int] = Nothing()
+    z: Collection[str] = Nothing()
+
+    assert issubclass(Just, Iterable)
+    assert issubclass(Nothing, Collection)
+
+    if isinstance(x, Just):
+        pass
+    elif isinstance(x, Nothing):
+        pass
+    else:
+        # this statement should be marked as unreachable
+        print("foo")  # type: ignore
+
+    del x
+    del y
+    del z
 
 
 def test_just_basics():
@@ -53,9 +69,9 @@ def test_nothing_basics():
 
 
 def test_from_optional():
-    assert Maybe.from_optional(5) == Just(5)
-    assert Maybe.from_optional(0) == Just(0)
-    assert Maybe.from_optional(None) == Nothing()
+    assert maybe_from_optional(5) == Just(5)
+    assert maybe_from_optional(0) == Just(0)
+    assert maybe_from_optional(None) == Nothing()
 
 
 def test_unwrap():

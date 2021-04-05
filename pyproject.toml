@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cans"
-version = "0.0.2"
+version = "0.1.0"
 description = "Robust, composable, functional containers"
 authors = ["Arie Bovenberg <a.c.bovenberg@gmail.com>"]
 license = "MIT"
