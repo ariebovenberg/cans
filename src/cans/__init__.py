@@ -14,6 +14,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import final
+
 # Single-sourcing the version number with poetry:
 # https://github.com/python-poetry/poetry/pull/2366#issuecomment-652418094
 try:
@@ -38,7 +40,7 @@ def flatten(m: Maybe[Maybe[T_co]]) -> Maybe[T_co]:
 class Maybe(Generic[T_co], Sequence[T_co]):
     """Container with may contain one item or none.
 
-    Use :class:`~canned.Just` and :class:`~canned.Nothing` to construct
+    Use :class:`~cans.Just` and :class:`~cans.Nothing` to construct
     instances of this class.
     You can use pattern matching (in Python 3.10+) to deconstruct them.
     Also, there are many useful methods on this class.
@@ -368,9 +370,10 @@ class Maybe(Generic[T_co], Sequence[T_co]):
         raise NotImplementedError()
 
 
+@final
 @dataclass(frozen=True, repr=False)
 class Just(Maybe[T_co]):
-    """The version of :class:`~canned.Maybe` which contains a value.
+    """The version of :class:`~cans.Maybe` which contains a value.
 
     Example
     -------
@@ -470,9 +473,10 @@ class Just(Maybe[T_co]):
             raise IndexError("Only index 0 can be retrieved from container.")
 
 
+@final
 @dataclass(frozen=True)
 class Nothing(Maybe[T_co]):
-    """The version of :class:`~canned.Maybe` which does not contain a value.
+    """The version of :class:`~cans.Maybe` which does not contain a value.
 
     Example
     -------

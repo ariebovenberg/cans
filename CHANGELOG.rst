@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.0.1 (2021-04-04)
+0.0.2 (2021-04-05)
 ------------------
 
-- First release including `Maybe`
+- First implementation of ``Maybe``.

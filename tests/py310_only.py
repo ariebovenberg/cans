@@ -5,7 +5,7 @@ in older python versions.
 """
 import pytest
 
-from canned import Just, Maybe, Nothing
+from cans import Just, Maybe, Nothing
 
 
 def _myfunc(m):

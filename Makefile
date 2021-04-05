@@ -28,7 +28,7 @@ type-check:
 check: lint isort-check format-check type-check
 
 pytest:
-	pytest --cov=canned
+	pytest --cov=cans
 
 test: check pytest
 

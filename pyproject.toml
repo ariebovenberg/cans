@@ -1,21 +1,22 @@
 [tool.poetry]
-name = "canned"
+name = "cans"
 version = "0.0.2"
 description = "Robust, composable, functional containers"
 authors = ["Arie Bovenberg <a.c.bovenberg@gmail.com>"]
 license = "MIT"
 packages = [
-    { include = "canned", from = "src" },
+    { include = "cans", from = "src" },
 ]
 readme = "README.rst"
 include = ["CHANGELOG.rst", "README.rst"]
-repository = "https://github.com/ariebovenberg/canned"
+repository = "https://github.com/ariebovenberg/cans"
 
 [tool.poetry.dependencies]
 python = "^3.7"
 importlib-metadata = {version = "^1.0", python = "<3.8"}
 sphinx = { version = "^3.5.3", optional = true }
 sphinx-material = {version = "^0.0.32", optional = true }
+typing-extensions = "^3.7.4"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.9.0"

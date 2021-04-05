@@ -7,7 +7,7 @@ from typing import Collection, Iterable, Union
 
 import pytest
 
-from canned import Just, Maybe, Nothing, flatten
+from cans import Just, Maybe, Nothing, flatten
 
 
 def _inverse(n: int) -> Maybe[float]:

@@ -1,17 +1,17 @@
-🥫 Canned
-=========
+🥫 Cans
+=======
 
-.. image:: https://img.shields.io/pypi/v/canned.svg?style=flat-square
-   :target: https://pypi.python.org/pypi/canned
+.. image:: https://img.shields.io/pypi/v/cans.svg?style=flat-square
+   :target: https://pypi.python.org/pypi/cans
 
-.. image:: https://img.shields.io/pypi/l/canned.svg?style=flat-square
-   :target: https://pypi.python.org/pypi/canned
+.. image:: https://img.shields.io/pypi/l/cans.svg?style=flat-square
+   :target: https://pypi.python.org/pypi/cans
 
-.. image:: https://img.shields.io/pypi/pyversions/canned.svg?style=flat-square
-   :target: https://pypi.python.org/pypi/canned
+.. image:: https://img.shields.io/pypi/pyversions/cans.svg?style=flat-square
+   :target: https://pypi.python.org/pypi/cans
 
-.. image:: https://img.shields.io/readthedocs/canned.svg?style=flat-square
-   :target: http://canned.readthedocs.io/
+.. image:: https://img.shields.io/readthedocs/cans.svg?style=flat-square
+   :target: http://cans.readthedocs.io/
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square
    :target: https://github.com/psf/black
@@ -24,7 +24,7 @@ Quickstart
 
 .. code-block:: python3
 
-   >>> from canned import Just, Nothing
+   >>> from cans import Just, Nothing
    >>> greeting = Just("hello")
    >>> greeting.map(str.upper)
    Just("HELLO")
