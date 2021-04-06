@@ -17,7 +17,7 @@
    :target: https://github.com/psf/black
 
 Simple, functional, composable containers like ``Maybe``.
-Properly typed and supports pattern matching on Python 3.10+.
+Properly **typed** and supports **pattern matching** on Python 3.10+.
 Inspired by the containers in the `Rust standard library <https://doc.rust-lang.org/std/option/>`_.
 
 Quickstart

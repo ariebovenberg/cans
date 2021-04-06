@@ -9,7 +9,6 @@
 
 # -- Project information -----------------------------------------------------
 import importlib.metadata
-from collections import OrderedDict
 
 metadata = importlib.metadata.metadata("cans")
 
