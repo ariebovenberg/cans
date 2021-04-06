@@ -305,7 +305,7 @@ class MaybeMixin(Generic[T_co], Sequence[T_co]):
     __or__ = or_
 
     def __iter__(self) -> Iterator[T_co]:
-        """Iterate of the contained item, if present.
+        """Iterate over the contained item, if present.
 
         Example
         -------
@@ -373,7 +373,7 @@ class MaybeMixin(Generic[T_co], Sequence[T_co]):
         Just(6)
         >>> Just(2)[:9:4]
         Just(2)
-        >>> Just(7)[2:9:4]
+        >>> Just(7)[2:]
         Nothing()
         >>> Nothing()[:]
         Nothing()
@@ -624,6 +624,6 @@ You can think of :class:`~cans.Maybe` as a :class:`~collections.abc.Sequence`
 which contains at most one item.
 
 >>> from itertools import chain
->>> chain.from_iterable(map(parse, "a4f59b"))
+>>> list(chain.from_iterable(map(parse, "a4f59b")))
 [4, 5, 9]
 """

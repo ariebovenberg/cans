@@ -1,9 +1,18 @@
 [tool.poetry]
 name = "cans"
-version = "0.1.1"
+version = "0.1.2"
 description = "Robust, composable, functional containers"
 authors = ["Arie Bovenberg <a.c.bovenberg@gmail.com>"]
 license = "MIT"
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
 packages = [
     { include = "cans", from = "src" },
 ]

@@ -16,8 +16,9 @@
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square
    :target: https://github.com/psf/black
 
-Composable, robust, functional containers like ``Maybe``.
+Simple, functional, composable containers like ``Maybe``.
 Properly typed and supports pattern matching on Python 3.10+.
+Inspired by the containers in the `Rust standard library <https://doc.rust-lang.org/std/option/>`_.
 
 Quickstart
 ----------
@@ -36,7 +37,7 @@ Quickstart
    >>> # Python 3.10+ only
    >>> match greeting:
    ...     case Just(n):
-   ...         print(f"{greeting.title()} world!")
+   ...         print(f"{greeting} world!")
    ...     case Nothing():
    ...         print("Hi world!")
    Hello world!
@@ -44,6 +45,7 @@ Quickstart
 Among the supported methods are ``flatmap``, ``filter``, ``zip``,
 as well as the relevant
 `collection APIs <https://docs.python.org/3/library/collections.abc.html>`_.
+See `the documentation <https://cans.readthedocs.io>`_ for a complete overview.
 
 Todo
 ----
