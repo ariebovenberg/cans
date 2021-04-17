@@ -567,7 +567,8 @@ When type annotating, only use :data:`~cans.Maybe`.
 >>> b: Maybe[str] = Nothing()
 ...
 >>> def parse(s: str) -> Maybe[int]:
-...     return Just(int(s)) if s.isdigit() else Nothing()
+...     try: return Just(int(s))
+...     except ValueError: return Nothing()
 ...
 >>> def first(m: list[T]) -> Maybe[T]:
 ...     return Just(m[0]) if m else Nothing()
