@@ -26,20 +26,19 @@ Quickstart
 .. code-block:: python3
 
    >>> from cans import Just, Nothing, Maybe
-   >>> greeting: Maybe[str] = Just("Hello")
    ...
    >>> def first(m: list[str]) -> Maybe[str]:
    ...     return Just(m[0]) if m else Nothing()
    ...
-   >>> first(["howdy", "hi", "hello"]).map(str.title).unwrap()
-   "Howdy"
+   >>> greeting = first(["hello", "hi", "howdy"]).map(str.title)
+   Just("Hello")
    ...
    >>> # Python 3.10+ only
    >>> match greeting:
    ...     case Just(n):
    ...         print(f"{greeting} world!")
    ...     case Nothing():
-   ...         print("Hi world!")
+   ...         print("Greetings, world!")
    Hello world!
 
 Among the supported methods are ``flatmap``, ``filter``, ``zip``,
