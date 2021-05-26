@@ -38,7 +38,7 @@ Quickstart
    ...     case Just(n):
    ...         print(f"{greeting} world!")
    ...     case Nothing():
-   ...         print("Greetings, world!")
+   ...         print("Hi there!")
    Hello world!
 
 Among the supported methods are ``flatmap``, ``filter``, ``zip``,
