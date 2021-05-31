@@ -13,7 +13,7 @@ from typing import (
     overload,
 )
 
-from calls import raises
+from calls import const
 from typing_extensions import final
 
 # Single-sourcing the version number with poetry:
@@ -100,7 +100,7 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         raise NotImplementedError()
 
     def is_just(self) -> bool:
-        """True if this `Maybe` contains a value
+        """True if this ``Maybe`` contains a value
 
         Example
         -------
@@ -110,11 +110,18 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         >>> Nothing().is_just()
         False
 
+        Note
+        ----
+
+        It's often easier to use the object's truthiness instead.
+
+        >>> if my_maybe:  # same as if my_maybe.is_just()
+        ...     do_things()
         """
         raise NotImplementedError()
 
     def is_nothing(self) -> bool:
-        """True if this `Maybe` does not contain a value
+        """True if this ``Maybe`` does not contain a value
 
         Example
         -------
@@ -124,11 +131,19 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         >>> Nothing().is_nothing()
         True
 
+        Note
+        ----
+
+        It's often easier to use the object's truthiness instead.
+
+        >>> if not my_maybe:  # same as if my_maybe.is_nothing()
+        ...     do_things()
+
         """
         raise NotImplementedError()
 
     def map(self, _func: Callable[[T], U]) -> "Maybe[U]":
-        """Apply a function to the value inside the `Maybe`,
+        """Apply a function to the value inside the ``Maybe``,
         without unwrapping it.
 
         Example
@@ -661,23 +676,45 @@ def maybe_from_optional(_v: Optional[T]) -> "Maybe[T]":
 
 
 class Lazy(Generic[T]):
-    __slots__ = ("_eval", "_result")
+    """Container for a lazily computed value.
+    Useful for implementing lazy loading or I/O behavior.
 
-    def __init__(self, _eval: Callable[[], T]) -> None:
-        self._eval = _eval
+    >>> guess = Lazy(lambda: requests.get('https://api.github.com/octocat'))
+    >>> guess.map(int)
+    ... 
+
+    """
+
+    __slots__ = ("_evaluator", "_result")
+
+    def __init__(self, _evaluator: Callable[[], T]) -> None:
+        self._evaluator = _evaluator
         self._result: Maybe[T] = _NOTHING
 
     @staticmethod
     def wrap(_value: V) -> "Lazy[V]":
-        v = cast(Lazy[V], Lazy(raises(RuntimeError("Unexpected evaluation."))))
+        v = Lazy(const(_value))
         v._result = Just(_value)
         return v
 
     def unwrap(self) -> T:
-        """Get the contained value, evaluating it if necessary"""
+        """Get the contained value, evaluating it if necessary.
+
+        Note
+        ----
+        You can also call the object itself for the same effect.
+
+        >>> my_lazy()  # same as my_lazy.unwrap()
+
+        """
         if self._result.is_nothing():
-            self._result = Just(self._eval())
+            self._result = Just(self._evaluator())
         return self._result.unwrap()
+
+    def __call__(self) -> T:
+        """Get the contained value, evaluating it if necessary.
+
+        """
 
     def map(self, _func: Callable[[T], U]) -> "Lazy[U]":
         return Lazy(lambda: _func(self.unwrap()))

@@ -1,4 +1,7 @@
 import pytest
+from typing import Callable
+import pickle
+from functools import partial
 
 from cans import Lazy, flatten
 
@@ -8,12 +11,21 @@ def test_unwrap(mocker):
     v = Lazy(f)
     assert not v.is_evaluated()
     assert v.unwrap() == 9
+    assert v() == 9
     assert v.is_evaluated()
     assert v.unwrap() == 9
     assert v.is_evaluated()
     assert f.call_count == 1
 
     assert Lazy.wrap(8).unwrap() == 8
+
+    # mypy checks
+    _: Callable[[], str] = Lazy.wrap("foo")
+
+
+def test_pickle():
+    v = Lazy(partial(int, "  4"))
+    assert pickle.loads(pickle.dumps(v))() == 4
 
 
 def test_map(mocker):
