@@ -54,7 +54,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "emacs"
 
-autodoc_type_aliases = {"Maybe": "cans.Maybe"}
+autodoc_type_aliases = {"Maybe": "cans.Maybe", "Lazy": "cans.Lazy"}
 autodoc_member_order = "bysource"
 
 

@@ -19,6 +19,7 @@
 Simple, functional, composable containers like ``Maybe``.
 Properly **typed** and supports **pattern matching** on Python 3.10+.
 Inspired by the containers in the `Rust standard library <https://doc.rust-lang.org/std/option/>`_.
+They're also proper Python citizens with nice ``repr`` and picklability.
 
 Quickstart
 ----------
@@ -26,20 +27,19 @@ Quickstart
 .. code-block:: python3
 
    >>> from cans import Just, Nothing, Maybe
-   >>> greeting: Maybe[str] = Just("Hello")
    ...
    >>> def first(m: list[str]) -> Maybe[str]:
    ...     return Just(m[0]) if m else Nothing()
    ...
-   >>> first(["howdy", "hi", "hello"]).map(str.title).unwrap()
-   "Howdy"
+   >>> greeting = first(["hello", "hi", "howdy"]).map(str.title)
+   Just("Hello")
    ...
    >>> # Python 3.10+ only
    >>> match greeting:
    ...     case Just(n):
    ...         print(f"{greeting} world!")
    ...     case Nothing():
-   ...         print("Hi world!")
+   ...         print("Hi there!")
    Hello world!
 
 Among the supported methods are ``flatmap``, ``filter``, ``zip``,

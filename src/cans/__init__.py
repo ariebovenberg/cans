@@ -9,9 +9,11 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
+from calls import const
 from typing_extensions import final
 
 # Single-sourcing the version number with poetry:
@@ -98,7 +100,7 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         raise NotImplementedError()
 
     def is_just(self) -> bool:
-        """True if this `Maybe` contains a value
+        """True if this ``Maybe`` contains a value
 
         Example
         -------
@@ -108,11 +110,18 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         >>> Nothing().is_just()
         False
 
+        Note
+        ----
+
+        It's often easier to use the object's truthiness instead.
+
+        >>> if my_maybe:  # same as if my_maybe.is_just()
+        ...     do_things()
         """
         raise NotImplementedError()
 
     def is_nothing(self) -> bool:
-        """True if this `Maybe` does not contain a value
+        """True if this ``Maybe`` does not contain a value
 
         Example
         -------
@@ -122,11 +131,19 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         >>> Nothing().is_nothing()
         True
 
+        Note
+        ----
+
+        It's often easier to use the object's truthiness instead.
+
+        >>> if not my_maybe:  # same as if my_maybe.is_nothing()
+        ...     do_things()
+
         """
         raise NotImplementedError()
 
     def map(self, _func: Callable[[T], U]) -> "Maybe[U]":
-        """Apply a function to the value inside the `Maybe`,
+        """Apply a function to the value inside the ``Maybe``,
         without unwrapping it.
 
         Example
@@ -405,7 +422,7 @@ class Just(_MaybeMixin[T]):
         )
 
     def flatmap(self, _func: Callable[[T], "Maybe[U]"]) -> "Maybe[U]":
-        return flatten(self.map(_func))
+        return _func(self._value)
 
     def as_optional(self) -> Optional[T]:
         return self._value
@@ -610,8 +627,20 @@ _NOTHING: Maybe = Nothing()
 _EMPTY_ITERATOR: Iterator = iter(())
 
 
+@overload
 def flatten(m: "Maybe[Maybe[T]]") -> "Maybe[T]":
-    """Flatten two nested maybes.
+    ...
+
+
+@overload
+def flatten(m: "Lazy[Lazy[T]]") -> "Lazy[T]":
+    ...
+
+
+def flatten(
+    m: "Union[Maybe[Maybe[T]], Lazy[Lazy[T]]]",
+) -> "Union[Maybe[T], Lazy[T]]":
+    """Flatten two nested containers.
 
     Example
     -------
@@ -623,7 +652,12 @@ def flatten(m: "Maybe[Maybe[T]]") -> "Maybe[T]":
     >>> flatten(Nothing())
     Nothing()
     """
-    return m.unwrap() if m.is_just() else m  # type: ignore
+    if isinstance(m, (Just, Nothing)):
+        return m.unwrap() if m.is_just() else m  # type: ignore
+    elif isinstance(m, Lazy):
+        return Lazy(lambda: m.unwrap().unwrap())
+    else:
+        raise NotImplementedError()
 
 
 def maybe_from_optional(_v: Optional[T]) -> "Maybe[T]":
@@ -639,3 +673,65 @@ def maybe_from_optional(_v: Optional[T]) -> "Maybe[T]":
     Nothing()
     """
     return _NOTHING if _v is None else Just(_v)
+
+
+class Lazy(Generic[T]):
+    """Container for a lazily computed value.
+    Useful for implementing lazy loading or I/O behavior.
+
+    >>> guess = Lazy(lambda: requests.get('https://api.github.com/octocat'))
+    >>> guess.map(int)
+    ... 
+
+    """
+
+    __slots__ = ("_evaluator", "_result")
+
+    def __init__(self, _evaluator: Callable[[], T]) -> None:
+        self._evaluator = _evaluator
+        self._result: Maybe[T] = _NOTHING
+
+    @staticmethod
+    def wrap(_value: V) -> "Lazy[V]":
+        v = Lazy(const(_value))
+        v._result = Just(_value)
+        return v
+
+    def unwrap(self) -> T:
+        """Get the contained value, evaluating it if necessary.
+
+        Note
+        ----
+        You can also call the object itself for the same effect.
+
+        >>> my_lazy()  # same as my_lazy.unwrap()
+
+        """
+        if self._result.is_nothing():
+            self._result = Just(self._evaluator())
+        return self._result.unwrap()
+
+    def __call__(self) -> T:
+        """Get the contained value, evaluating it if necessary.
+
+        """
+
+    def map(self, _func: Callable[[T], U]) -> "Lazy[U]":
+        return Lazy(lambda: _func(self.unwrap()))
+
+    def zip(self, _other: "Lazy[U]") -> "Lazy[Tuple[T, U]]":
+        return Lazy(
+            lambda: (
+                self.unwrap(),
+                _other.unwrap(),
+            )
+        )
+
+    def is_evaluated(self) -> bool:
+        return self._result.is_just()
+
+    def __repr__(self) -> str:
+        return f"Lazy({self._result.unwrap_or('?')})"
+
+    def __hash__(self) -> int:
+        raise TypeError("Lazy objects cannot be hashed")
