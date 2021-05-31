@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.0.0 (2022-09-??)
+------------------
+
+- Add ``Lazy`` container.
+- Rename ``Just`` to ``Some``.
+- Drop Python 3.6 support
+
 0.1.3 (2021-04-17)
 ------------------
 

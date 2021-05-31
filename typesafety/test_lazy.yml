@@ -1,0 +1,35 @@
+- case: constructor
+  main: |
+    from cans import Lazy
+    from typing import Callable
+
+    a = Lazy(lambda: True)
+    reveal_type(a)  # N: Revealed type is "cans.Lazy[builtins.bool]"
+    a2: Callable[[], int] = a
+
+    # variance
+    d: Lazy[int] = Lazy.wrap(False)
+
+- case: flatten
+  main: |
+    from cans import Lazy
+
+    f = Lazy.wrap(Lazy.wrap(4))
+    reveal_type(f)  # N: Revealed type is "cans.Lazy[cans.Lazy[builtins.int]]"
+    reveal_type(f.flatten())  # N: Revealed type is "cans.Lazy[builtins.int]"
+
+    Lazy.wrap(4).flatten()  # E: Invalid self argument "Lazy[int]" to attribute function "flatten" with type "Callable[[Lazy[Lazy[U]]], Lazy[U]]"
+
+- case: unwrap
+  main: |
+    from cans import Lazy
+
+    a = Lazy.wrap('foo')
+    reveal_type(a.unwrap())  # N: Revealed type is "builtins.str"
+
+- case: map
+  main: |
+    from cans import Lazy
+
+    a = Lazy.wrap('foo')
+    reveal_type(a.map(len))  # N: Revealed type is "cans.Lazy[builtins.int]"

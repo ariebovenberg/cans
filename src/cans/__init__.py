@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import (
     Any,
@@ -9,12 +10,10 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 
-from calls import raises
-from typing_extensions import final
+from typing_extensions import TypeGuard, final
 
 # Single-sourcing the version number with poetry:
 # https://github.com/python-poetry/poetry/pull/2366#issuecomment-652418094
@@ -24,11 +23,10 @@ except ModuleNotFoundError:  # pragma: no cover
     __version__ = __import__("importlib_metadata").version(__name__)
 
 __all__ = [
-    "Just",
     "Maybe",
+    "Some",
     "Nothing",
-    "flatten",
-    "maybe_from_optional",
+    "Lazy",
 ]
 
 T = TypeVar("T", covariant=True)
@@ -36,12 +34,54 @@ U = TypeVar("U", covariant=True)
 V = TypeVar("V")
 
 
-# Why not the Rust-like Option(Some/None) terminology?
-#     (1) it's confusing with Optional
-#     (2) `None` is reserved in Python
-class _MaybeMixin(Generic[T], Sequence[T]):
-    """Collection of methods supported by both
-    :class:`~cans.Just` and :class:`~cans.Nothing`.
+class Maybe(Sequence[T]):
+    """
+    A container which contains either one item, or none.
+    Use :class:`~cans.Some` and :class:`~cans.Nothing` to express
+    these two variants.
+    When type annotating, only use :data:`~cans.Maybe`.
+
+    >>> a: Maybe[int] = Some(5)
+    >>> b: Maybe[str] = Nothing()
+    ...
+    >>> def parse(s: str) -> Maybe[int]:
+    ...     try: return Some(int(s))
+    ...     except ValueError: return Nothing()
+    ...
+    >>> def first(m: list[T]) -> Maybe[T]:
+    ...     return Some(m[0]) if m else Nothing()
+    ...
+    >>> parse("42")
+    Some(42)
+    >>> first([])
+    Nothing()
+
+    Various methods are available (documented in :class:`~cans.Maybe`)
+    which you can use to operate on the value, without repeatedly unpacking it.
+
+    >>> first(["-5", "6", ""]).flatmap(parse).map(abs)
+    Some(5)
+    >>> first([]).flatmap(parse).map(abs).unwrap_or("Nothing here...")
+    "Nothing here..."
+
+    In Python 3.10+, you can use pattern matching to deconstruct
+    a :class:`~cans.Maybe`.
+
+    >>> match first(["bob", "henry", "anita"]).map(str.title):
+    ...     case Some(x):
+    ...         print(f'Hello {x}!')
+    ...     case Nothing()
+    ...         print('Nobody here...')
+    "Hello Bob!"
+
+    :class:`~cans.Maybe` also implements the
+    :class:`~collections.abc.Sequence` API,
+    meaning it acts kind of like a list with one or no items.
+    Thus, it works nicely with :mod:`itertools`!
+
+    >>> from itertools import chain
+    >>> list(chain.from_iterable(map(parse, "a4f59b")))
+    [4, 5, 9]
     """
 
     __slots__ = ()
@@ -52,6 +92,37 @@ class _MaybeMixin(Generic[T], Sequence[T]):
             "Use the factory methods `of` and `from_optional` instead."
         )
 
+    @final
+    @staticmethod
+    def from_optional(_v: Optional[T]) -> Maybe[T]:
+        """Create a maybe container from a value which may be ``None``.
+        In that case, it'll be an empty Maybe.
+
+        Example
+        -------
+
+        >>> Maybe.from_optional(5)
+        Some(5)
+        >>> Maybe.from_optional(None)
+        Nothing()
+        """
+        return _NOTHING if _v is None else Some(_v)
+
+    def flatten(self: Maybe[Maybe[U]]) -> Maybe[U]:
+        """Flatten a nested container.
+
+        Example
+        -------
+
+        >>> Maybe.flatten(Some(Some(5)))
+        Some(5)
+        >>> Maybe.flatten(Some(Nothing()))
+        Nothing()
+        >>> Maybe.flatten(Nothing())
+        Nothing()
+        """
+        raise NotImplementedError()
+
     def unwrap(self) -> T:
         """Unwrap the value in this container.
         If there is no value, :class:`TypeError` is raised.
@@ -59,7 +130,7 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         Example
         -------
 
-        >>> Just(6).unwrap()
+        >>> Some(6).unwrap()
         6
         >>> Nothing().unwrap()
         Exception: TypeError()
@@ -68,8 +139,8 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         ---
 
         Only use this if you're absolutely sure that there is a value.
-        If not, use :meth:`~cans._MaybeMixin.unwrap_or` instead.
-        Or, use :meth:`~cans._MaybeMixin.expect`
+        If not, use :meth:`~cans.Maybe.unwrap_or` instead.
+        Or, use :meth:`~cans.Maybe.expect`
         for a more descriptive message.
         """
         raise NotImplementedError()
@@ -81,7 +152,7 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         Example
         -------
 
-        >>> Just(8).unwrap_or("foo")
+        >>> Some(8).unwrap_or("foo")
         8
         >>> Nothing().unwrap_or("foo")
         "foo"
@@ -92,91 +163,113 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         """Unwrap the value in this container.
         If there is no value, raise an AssertionError with message
 
-        >>> Just(9).expect("What on earth?")
+        >>> Some(9).expect("What on earth?")
         9
         >>> Nothing().expect("What did you expect?")
         Exception: AssertionError("What did you expect?")
         """
         raise NotImplementedError()
 
-    def is_just(self) -> bool:
-        """True if this `Maybe` contains a value
+    def is_some(self) -> bool:
+        """True if this instance contains a value
 
         Example
         -------
 
-        >>> Just(2).is_just()
+        >>> Some(2).is_some()
         True
-        >>> Nothing().is_just()
+        >>> Nothing().is_some()
         False
 
+        Note
+        ----
+
+        It's often easier to use the object's truthiness instead.
+
+        >>> if my_maybe:  # same as if my_maybe.is_some()
+        ...     do_things()
         """
         raise NotImplementedError()
 
     def is_nothing(self) -> bool:
-        """True if this `Maybe` does not contain a value
+        """True if this instance does not contain a value
 
         Example
         -------
 
-        >>> Just(2).is_nothing()
+        >>> Some(2).is_nothing()
         False
         >>> Nothing().is_nothing()
         True
 
+        Note
+        ----
+
+        It's often easier to use the object's truthiness instead.
+
+        >>> if not my_maybe:  # same as if my_maybe.is_nothing()
+        ...     do_things()
+
         """
         raise NotImplementedError()
 
-    def map(self, _func: Callable[[T], U]) -> "Maybe[U]":
-        """Apply a function to the value inside the `Maybe`,
-        without unwrapping it.
+    def map(self, _func: Callable[[T], U]) -> Maybe[U]:
+        """Apply a function to the value inside without unwrapping it.
 
         Example
         -------
 
-        >>> Just("hello").map(str.upper)
-        Just("HELLO")
+        >>> Some("hello").map(str.upper)
+        Some("HELLO")
         >>> Nothing().map(abs)
         Nothing()
 
         """
         raise NotImplementedError()
 
-    def filter(self, _func: Callable[[T], bool]) -> "Maybe[T]":
+    @overload
+    def filter(self, _func: Callable[[T], TypeGuard[U]]) -> Maybe[U]:
+        ...
+
+    @overload
+    def filter(self, _func: Callable[[T], Any]) -> Maybe[T]:
+        ...
+
+    def filter(self, _func):  # type: ignore[no-untyped-def]
         """Keep the value inside only if it satisfies the given predicate.
 
         Example
         -------
 
-        >>> Just("9").filter(str.isdigit)
-        Just("9")
-        >>> Just("foo").filter(str.isdigit)
+        >>> Some("9").filter(str.isdigit)
+        Some("9")
+        >>> Some("foo").filter(str.isdigit)
         Nothing()
         >>> Nothing().filter(str.isdigit)
         Nothing()
         """
         raise NotImplementedError()
 
-    def zip(self, _other: "Maybe[U]") -> "Maybe[Tuple[T, U]]":
+    def zip(self, _other: Maybe[U]) -> Maybe[Tuple[T, U]]:
         """Combine two values in a tuple, if both are present.
 
         Example
         -------
 
-        >>> Just(8).zip(Just(2))
-        Just((8, 2))
-        >>> Just(7).zip(Nothing())
+        >>> Some(8).zip(Some(2))
+        Some((8, 2))
+        >>> Some(7).zip(Nothing())
         Nothing()
-        >>> Nothing().zip(Just(3))
+        >>> Nothing().zip(Some(3))
         Nothing()
         >>> Nothing().zip(Nothing())
         Nothing()
         """
         raise NotImplementedError()
 
-    def flatmap(self, _func: Callable[[T], "Maybe[U]"]) -> "Maybe[U]":
-        """Apply a function (which returns a maybe)
-        to the value inside the ``Maybe``.
+    def flatmap(self, _func: Callable[[T], Maybe[U]]) -> Maybe[U]:
+        """Apply a function (which returns a :class:`~cans.Maybe`)
+        to the value inside.
         Then, flatten the result.
 
         Example
@@ -184,13 +277,13 @@ class _MaybeMixin(Generic[T], Sequence[T]):
 
         >>> def first(s) -> Maybe:
         ...     try:
-        ...          return Just(s[0])
+        ...          return Some(s[0])
         ...     except LookupError:
         ...          return Nothing()
         ...
-        >>> Just([9, 4]).flatmap(first)
-        Just(9)
-        >>> Just([]).flatmap(first)
+        >>> Some([9, 4]).flatmap(first)
+        Some(9)
+        >>> Some([]).flatmap(first)
         Nothing()
         >>> Nothing().flatmap(first)
         Nothing()
@@ -203,7 +296,7 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         Example
         -------
 
-        >>> Just(6).as_optional()
+        >>> Some(6).as_optional()
         6
         >>> Nothing().as_optional()
         None
@@ -211,21 +304,21 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         """
         raise NotImplementedError()
 
-    def setdefault(self, _v: V) -> "Maybe[Union[T, V]]":
+    def setdefault(self, _v: V) -> Maybe[Union[T, V]]:
         """Set a value if one is not already present.
 
         Example
         -------
 
-        >>> Just(6).setdefault(7)
-        Just(6)
+        >>> Some(6).setdefault(7)
+        Some(6)
         >>> Nothing().setdefault(3)
-        Just(3)
+        Some(3)
 
         """
         raise NotImplementedError()
 
-    def and_(self, _other: "Maybe[U]") -> "Maybe[Union[T, U]]":
+    def and_(self, _other: Maybe[U]) -> Maybe[Union[T, U]]:
         """
         Perform a logical AND operation.
         Returns the first Nothing, or the last of the two values.
@@ -233,19 +326,19 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         Tip
         ---
 
-        Available as the :meth:`~cans._MaybeMixin.and_` method
+        Available as the :meth:`~cans.Maybe.and_` method
         as well as the ``&`` operator.
 
         Example
         -------
 
-        >>> Just(5) & Just(9)
-        Just(9)
-        >>> Just(5).and_(Just(9))
-        Just(9)
-        >>> Just(9) & Nothing()
+        >>> Some(5) & Some(9)
+        Some(9)
+        >>> Some(5).and_(Some(9))
+        Some(9)
+        >>> Some(9) & Nothing()
         Nothing()
-        >>> Nothing() & Just(8)
+        >>> Nothing() & Some(8)
         Nothing()
 
         """
@@ -253,27 +346,27 @@ class _MaybeMixin(Generic[T], Sequence[T]):
 
     __and__ = and_
 
-    def or_(self, _other: "Maybe[U]") -> "Maybe[Union[T, U]]":
+    def or_(self, _other: Maybe[U]) -> Maybe[Union[T, U]]:
         """Perform a logical OR operation.
-        Return the first Just, or the last of the two values.
+        Return the first Some, or the last of the two values.
 
         Tip
         ---
 
-        Available as the :meth:`~cans._MaybeMixin.or_` method
+        Available as the :meth:`~cans.Maybe.or_` method
         as well as the ``|`` operator.
 
         Example
         -------
 
-        >>> Just(5) | Just(9)
-        Just(5)
-        >>> Just(5).or_(Just(9))
-        Just(5)
-        >>> Just(9) | Nothing()
-        Just(9)
-        >>> Nothing() | Just(8)
-        Just(8)
+        >>> Some(5) | Some(9)
+        Some(5)
+        >>> Some(5).or_(Some(9))
+        Some(5)
+        >>> Some(9) | Nothing()
+        Some(9)
+        >>> Nothing() | Some(8)
+        Some(8)
         >>> Nothing() | Nothing()
         Nothing()
         """
@@ -287,7 +380,7 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         Example
         -------
 
-        >>> list(Just(5))
+        >>> list(Some(5))
         [5]
         >>> list(Nothing())
         []
@@ -300,9 +393,9 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         Example
         -------
 
-        >>> 5 in Just(5)
+        >>> 5 in Some(5)
         True
-        >>> 4 in Just(8)
+        >>> 4 in Some(8)
         False
         >>> 1 in Nothing()
         False
@@ -315,7 +408,7 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         Example
         -------
 
-        >>> len(Just(5))
+        >>> len(Some(5))
         1
         >>> len(Nothing())
         0
@@ -327,10 +420,10 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         ...
 
     @overload
-    def __getitem__(self, _i: slice) -> "Maybe[T]":
+    def __getitem__(self, _i: slice) -> Maybe[T]:
         ...
 
-    def __getitem__(self, _i: Union[int, slice]) -> Union[T, "Maybe[T]"]:
+    def __getitem__(self, _i: Union[int, slice]) -> Union[T, Maybe[T]]:
         """Get the item from this container by index.
         Part of the :class:`~collections.abc.Sequence` API.
 
@@ -339,18 +432,18 @@ class _MaybeMixin(Generic[T], Sequence[T]):
         Example
         -------
 
-        >>> Just(6)[0]
+        >>> Some(6)[0]
         6
-        >>> Just(8)[8]
+        >>> Some(8)[8]
         Exception: IndexError
         >>> Nothing()[0]
         Exception: IndexError
         ...
-        >>> Just(6)[:]
-        Just(6)
-        >>> Just(2)[:9:4]
-        Just(2)
-        >>> Just(7)[2:]
+        >>> Some(6)[:]
+        Some(6)
+        >>> Some(2)[:9:4]
+        Some(2)
+        >>> Some(7)[2:]
         Nothing()
         >>> Nothing()[:]
         Nothing()
@@ -362,13 +455,13 @@ class _MaybeMixin(Generic[T], Sequence[T]):
 
 @final
 @dataclass(frozen=True, repr=False)
-class Just(_MaybeMixin[T]):
+class Some(Maybe[T]):
     """The version of :class:`~cans.Maybe` which contains a value.
 
     Example
     -------
 
-    >>> a: Maybe[int] = Just(-8)
+    >>> a: Maybe[int] = Some(-8)
     >>> a.map(abs).unwrap()
     8
 
@@ -377,6 +470,9 @@ class Just(_MaybeMixin[T]):
     __slots__ = ("_value",)
 
     _value: T
+
+    def flatten(self: Some[Maybe[U]]) -> Maybe[U]:
+        return self._value
 
     def unwrap(self) -> T:
         return self._value
@@ -387,46 +483,54 @@ class Just(_MaybeMixin[T]):
     def expect(self, _msg: str) -> T:
         return self._value
 
-    def is_just(self) -> bool:
+    def is_some(self) -> bool:
         return True
 
     def is_nothing(self) -> bool:
         return False
 
-    def map(self, _func: Callable[[T], U]) -> "Maybe[U]":
-        return Just(_func(self._value))
+    def map(self, _func: Callable[[T], U]) -> Maybe[U]:
+        return Some(_func(self._value))
 
-    def filter(self, _func: Callable[[T], bool]) -> "Maybe[T]":
+    @overload
+    def filter(self, _func: Callable[[T], TypeGuard[U]]) -> Maybe[U]:
+        ...
+
+    @overload
+    def filter(self, _func: Callable[[T], Any]) -> Maybe[T]:
+        ...
+
+    def filter(self, _func):  # type: ignore[no-untyped-def]
         return self if _func(self._value) else _NOTHING
 
-    def zip(self, _other: "Maybe[U]") -> "Maybe[Tuple[T, U]]":
+    def zip(self, _other: Maybe[U]) -> Maybe[Tuple[T, U]]:
         return (
-            Just((self._value, _other.unwrap()))
-            if _other.is_just()
+            Some((self._value, _other.unwrap()))
+            if _other.is_some()
             else _NOTHING
         )
 
-    def flatmap(self, _func: Callable[[T], "Maybe[U]"]) -> "Maybe[U]":
+    def flatmap(self, _func: Callable[[T], Maybe[U]]) -> Maybe[U]:
         return _func(self._value)
 
     def as_optional(self) -> Optional[T]:
         return self._value
 
-    def setdefault(self, _v: V) -> "Maybe[Union[T, V]]":
+    def setdefault(self, _v: V) -> Maybe[Union[T, V]]:
         return self
 
-    def and_(self, _other: "Maybe[U]") -> "Maybe[Union[T, U]]":
+    def and_(self, _other: Maybe[U]) -> Maybe[Union[T, U]]:
         return _other
 
     __and__ = and_
 
-    def or_(self, _other: "Maybe[U]") -> "Maybe[Union[T, U]]":
+    def or_(self, _other: Maybe[U]) -> Maybe[Union[T, U]]:
         return self
 
     __or__ = or_
 
     def __repr__(self) -> str:
-        return f"Just({self._value})"
+        return f"Some({self._value})"
 
     def __iter__(self) -> Iterator[T]:
         yield self._value
@@ -451,10 +555,10 @@ class Just(_MaybeMixin[T]):
         ...
 
     @overload
-    def __getitem__(self, _i: slice) -> "Maybe[T]":
+    def __getitem__(self, _i: slice) -> Maybe[T]:
         ...
 
-    def __getitem__(self, _i: Union[int, slice]) -> Union[T, "Maybe[T]"]:
+    def __getitem__(self, _i: Union[int, slice]) -> Union[T, Maybe[T]]:
         if isinstance(_i, slice):
             return self if _i.indices(1)[:2] == (0, 1) else _NOTHING
         elif _i == 0:
@@ -465,7 +569,7 @@ class Just(_MaybeMixin[T]):
 
 @final
 @dataclass(frozen=True)
-class Nothing(_MaybeMixin[T]):
+class Nothing(Maybe[T]):
     """The version of :class:`~cans.Maybe` which does not contain a value.
 
     Example
@@ -479,6 +583,9 @@ class Nothing(_MaybeMixin[T]):
 
     __slots__ = ()
 
+    def flatten(self: Maybe[Maybe[U]]) -> Maybe[U]:
+        return _NOTHING
+
     def unwrap(self) -> T:
         raise TypeError("Cannot unwrap an empty `Maybe`.")
 
@@ -488,36 +595,44 @@ class Nothing(_MaybeMixin[T]):
     def expect(self, _msg: str) -> T:
         raise AssertionError(_msg)
 
-    def is_just(self) -> bool:
+    def is_some(self) -> bool:
         return False
 
     def is_nothing(self) -> bool:
         return True
 
-    def map(self, _func: Callable[[T], U]) -> "Maybe[U]":
+    def map(self, _func: Callable[[T], U]) -> Maybe[U]:
         return _NOTHING
 
-    def filter(self, _func: Callable[[T], bool]) -> "Maybe[T]":
+    @overload
+    def filter(self, _func: Callable[[T], TypeGuard[U]]) -> Maybe[U]:
+        ...
+
+    @overload
+    def filter(self, _func: Callable[[T], Any]) -> Maybe[T]:
+        ...
+
+    def filter(self, _func):  # type: ignore[no-untyped-def]
         return _NOTHING
 
-    def zip(self, _other: "Maybe[U]") -> "Maybe[Tuple[T, U]]":
+    def zip(self, _other: Maybe[U]) -> Maybe[Tuple[T, U]]:
         return _NOTHING
 
-    def flatmap(self, _func: Callable[[T], "Maybe[U]"]) -> "Maybe[U]":
+    def flatmap(self, _func: Callable[[T], Maybe[U]]) -> Maybe[U]:
         return _NOTHING
 
     def as_optional(self) -> Optional[T]:
         return None
 
-    def setdefault(self, _v: V) -> "Maybe[Union[T, V]]":
-        return Just(_v)
+    def setdefault(self, _v: V) -> Maybe[Union[T, V]]:
+        return Some(_v)
 
-    def and_(self, _other: "Maybe[U]") -> "Maybe[Union[T, U]]":
+    def and_(self, _other: Maybe[U]) -> Maybe[Union[T, U]]:
         return _NOTHING
 
     __and__ = and_
 
-    def or_(self, _other: "Maybe[U]") -> "Maybe[Union[T, U]]":
+    def or_(self, _other: Maybe[U]) -> Maybe[Union[T, U]]:
         return _other
 
     __or__ = or_
@@ -545,153 +660,84 @@ class Nothing(_MaybeMixin[T]):
         ...
 
     @overload
-    def __getitem__(self, _i: slice) -> "Maybe[T]":
+    def __getitem__(self, _i: slice) -> Maybe[T]:
         ...
 
-    def __getitem__(self, _i: Union[int, slice]) -> Union[T, "Maybe[T]"]:
+    def __getitem__(self, _i: Union[int, slice]) -> Union[T, Maybe[T]]:
         if isinstance(_i, slice):
             return _NOTHING
         else:
             raise IndexError("No items in this container.")
 
 
-# Q: Why declare this as a union, and not a base class?
-# A: So that mypy can properly infer that there are only two variants,
-#    and thus handle conditionals and pattern matching accordingly.
-Maybe = Union[Just[T], Nothing[T]]
-"""
-A container which contains either one item, or none.
-Use :class:`~cans.Just` and :class:`~cans.Nothing` to express
-these two variants.
-When type annotating, only use :data:`~cans.Maybe`.
-
->>> a: Maybe[int] = Just(5)
->>> b: Maybe[str] = Nothing()
-...
->>> def parse(s: str) -> Maybe[int]:
-...     try: return Just(int(s))
-...     except ValueError: return Nothing()
-...
->>> def first(m: list[T]) -> Maybe[T]:
-...     return Just(m[0]) if m else Nothing()
-...
->>> parse("42")
-Just(42)
->>> first([])
-Nothing()
-
-Various methods are available (documented in :class:`~cans._MaybeMixin`)
-which you can use to operate on the value, without repeatedly unpacking it.
-
->>> first(["-5", "6", ""]).flatmap(parse).map(abs)
-Just(5)
->>> first([]).flatmap(parse).map(abs).unwrap_or("Nothing here...")
-"Nothing here..."
-
-In Python 3.10+, you can use pattern matching to deconstruct
-a :class:`~cans.Maybe`.
-
->>> match first(["bob", "henry", "anita"]).map(str.title):
-...     case Just(x):
-...         print(f'Hello {x}!')
-...     case Nothing()
-...         print('Nobody here...')
-"Hello Bob!"
-
-:class:`~cans.Maybe` also implements the
-:class:`~collections.abc.Sequence` API,
-meaning it acts kind of like a list with one or no items.
-Thus, it works nicely with :mod:`itertools`!
-
->>> from itertools import chain
->>> list(chain.from_iterable(map(parse, "a4f59b")))
-[4, 5, 9]
-"""
-
 _NOTHING: Maybe = Nothing()
 _EMPTY_ITERATOR: Iterator = iter(())
 
 
-@overload
-def flatten(m: "Maybe[Maybe[T]]") -> "Maybe[T]":
-    ...
-
-
-@overload
-def flatten(m: "Lazy[Lazy[T]]") -> "Lazy[T]":
-    ...
-
-
-def flatten(
-    m: "Union[Maybe[Maybe[T]], Lazy[Lazy[T]]]",
-) -> "Union[Maybe[T], Lazy[T]]":
-    """Flatten two nested containers.
-
-    Example
-    -------
-
-    >>> flatten(Just(Just(5)))
-    Just(5)
-    >>> flatten(Just(Nothing()))
-    Nothing()
-    >>> flatten(Nothing())
-    Nothing()
-    """
-    if isinstance(m, (Just, Nothing)):
-        return m.unwrap() if m.is_just() else m  # type: ignore
-    elif isinstance(m, Lazy):
-        return Lazy(lambda: m.unwrap().unwrap())
-    else:
-        raise NotImplementedError()
-
-
-def maybe_from_optional(_v: Optional[T]) -> "Maybe[T]":
-    """Create a maybe container from the given value, which may be ``None``.
-    In that case, it'll be an empty Maybe.
-
-    Example
-    -------
-
-    >>> maybe_from_optional(5)
-    Just(5)
-    >>> maybe_from_optional(None)
-    Nothing()
-    """
-    return _NOTHING if _v is None else Just(_v)
-
-
 class Lazy(Generic[T]):
-    __slots__ = ("_eval", "_result")
+    """Container for a lazily computed value.
+    Useful for implementing lazy loading or I/O behavior.
 
-    def __init__(self, _eval: Callable[[], T]) -> None:
-        self._eval = _eval
+    >>> Lazy(lambda: input('what is your name?'))
+    ...
+
+    Note
+    ----
+    :class:`~cans.Lazy` instances are mutable by necessity because they
+    need to remember whether they've been evaluated.
+    Therefore they are not hashable.
+
+    Note
+    ----
+    If evaluating a :class:`~cans.Lazy` raises an exception,
+    this is not cached. A subsequent call will lead to another evaluation.
+    """
+
+    __slots__ = ("_evaluator", "_result")
+
+    def __init__(self, __evaluator: Callable[[], T]) -> None:
+        self._evaluator = __evaluator
         self._result: Maybe[T] = _NOTHING
 
     @staticmethod
-    def wrap(_value: V) -> "Lazy[V]":
-        v = cast(Lazy[V], Lazy(raises(RuntimeError("Unexpected evaluation."))))
-        v._result = Just(_value)
+    def wrap(__value: V) -> Lazy[V]:
+        """Wrap a value into a lazy one."""
+        v = Lazy(lambda: __value)
+        v._result = Some(__value)
         return v
 
+    def flatten(self: Lazy[Lazy[U]]) -> Lazy[U]:
+        """Flatten a nested container."""
+        return self._result.unwrap_or(Lazy(lambda: self()()))
+
     def unwrap(self) -> T:
-        """Get the contained value, evaluating it if necessary"""
-        if self._result.is_nothing():
-            self._result = Just(self._eval())
+        """Get the contained value, evaluating it if necessary.
+
+        Note
+        ----
+        You can also call the object itself for the same effect.
+
+        >>> my_lazy()  # same as my_lazy.unwrap()
+
+        """
+        return self()
+
+    def __call__(self) -> T:
+        """Get the contained value, evaluating it if necessary."""
+        if not self._result:
+            self._result = Some(self._evaluator())
         return self._result.unwrap()
 
-    def map(self, _func: Callable[[T], U]) -> "Lazy[U]":
-        return Lazy(lambda: _func(self.unwrap()))
+    def map(self, _func: Callable[[T], U]) -> Lazy[U]:
+        """Apply a function to the contained value."""
+        return Lazy(lambda: _func(self()))
 
-    def zip(self, _other: "Lazy[U]") -> "Lazy[Tuple[T, U]]":
-        return Lazy(
-            lambda: (
-                self.unwrap(),
-                _other.unwrap(),
-            )
-        )
+    def zip(self, _other: Lazy[U]) -> Lazy[Tuple[T, U]]:
+        return Lazy(lambda: (self(), _other()))
 
     def is_evaluated(self) -> bool:
-        return self._result.is_just()
+        """Whether the contained expression has been evaluated already."""
+        return self._result.is_some()
 
     def __repr__(self) -> str:
         return f"Lazy({self._result.unwrap_or('?')})"
