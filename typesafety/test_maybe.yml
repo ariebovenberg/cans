@@ -1,0 +1,74 @@
+- case: constructor
+  main: |
+    from cans import Maybe, Some, Nothing
+    from collections.abc import Sequence
+
+    a: Maybe[int] = Some(5)
+    a1: Sequence[int] = a
+    b: Maybe[str] = Some(3) # E: Argument 1 to "Some" has incompatible type "int"; expected "str"
+    c: Maybe[str] = Nothing()
+
+    # variance
+    d: Maybe[int] = Some(True)
+
+- case: from_optional
+  main: |
+    from cans import Maybe
+    from typing import Optional
+
+    a: Optional[int]
+    reveal_type(Maybe.from_optional(a))  # N: Revealed type is "cans.Maybe[builtins.int]"
+
+- case: flatten
+  main: |
+    from cans import Maybe
+
+    f = Maybe.from_optional(Maybe.from_optional(4))
+    reveal_type(f)  # N: Revealed type is "cans.Maybe[cans.Maybe[builtins.int]]"
+    reveal_type(f.flatten())  # N: Revealed type is "cans.Maybe[builtins.int]"
+
+    Maybe.from_optional(4).flatten()  # E: Invalid self argument "Maybe[int]" to attribute function "flatten" with type "Callable[[Maybe[Maybe[U]]], Maybe[U]]"
+
+- case: unwrap
+  main: |
+    from cans import Maybe, Some
+
+    a = Some('foo')
+    reveal_type(a.unwrap_or(3))  # N: Revealed type is "Union[builtins.str, builtins.int]"
+    reveal_type(a.unwrap())  # N: Revealed type is "builtins.str"
+
+- case: map
+  main: |
+    from cans import Maybe
+
+    a = Maybe.from_optional('foo')
+    reveal_type(a.map(len))  # N: Revealed type is "cans.Maybe[builtins.int]"
+
+- case: filter
+  main: |
+    from cans import Maybe
+    from typing_extensions import TypeGuard
+
+    a = Maybe.from_optional(4)
+    reveal_type(a.filter(lambda x: x % 2))  # N: Revealed type is "cans.Maybe[builtins.int]"
+
+    def is_bool(value: int) -> TypeGuard[bool]:
+        pass
+
+    b = Maybe.from_optional(4)
+    reveal_type(b.filter(is_bool))  # N: Revealed type is "cans.Maybe[builtins.bool]"
+
+- case: pattern_match
+  # Fails due to mypy#13612
+  skip: True
+  main: |
+    from cans import Maybe, Some, Nothing
+
+    x = Maybe.from_optional(4)
+
+    reveal_type(x)  # N: Revealed type is "cans.Maybe[builtins.int]"
+
+    match x:
+      case Some(y):
+        reveal_type(y)  # N: Revealed type is "builtins.int"
+
